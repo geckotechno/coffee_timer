@@ -50,10 +50,12 @@ uint8_t LOWER_L = 0x06;
 uint8_t LOWER_D = 0x5e;
 
 void setup() {
-  Serial.begin(9600);
   // Setup the display.
   clock1.begin(DISPLAY_1);
+  clock1.setBrightness(15);
+  
   clock2.begin(DISPLAY_2);
+  clock2.setBrightness(8);
 
   pinMode(TIME_PIN_1, INPUT);
   pinMode(LED_PIN_1, OUTPUT);
@@ -78,7 +80,7 @@ void loop() {
       timer1Age++;    
     } else {
       if (timer1Age > 60) {
-        timmer1 = 1;
+        timer1 = 1;
       } 
       timer1Age = 0;
       setClockDisplay(clock1,timer1);      
@@ -88,7 +90,7 @@ void loop() {
       timer2Age++;    
     } else {
       if (timer2Age > 60) {
-        timmer2 = 1;
+        timer2 = 1;
       } 
       timer2Age = 0;
       setClockDisplay(clock2,timer2);      
