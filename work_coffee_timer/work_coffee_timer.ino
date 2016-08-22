@@ -31,18 +31,23 @@ bool blinkColon = false;
 unsigned long basetime;
 unsigned long currtime;
 unsigned long timer1;
+unsigned long timer1Age;
+bool timer1Reset;
 unsigned long timer2;
+unsigned long timer2Age;
+bool timer2Reset;
 
- //       _      1     1
- //      | |    6 2   6 2
- //       -      4     7
- //      | |    5 3   5 3
- //       _      7     4
+ //       _         1
+ //      | |       6 2
+ //       -         7
+ //      | |       5 3
+ //       _         4
 
-uint8_t dash = 0x40;
-uint8_t lower_o = 0x5c;
-uint8_t lower_l = 0x06;
-uint8_t lower_d = 0x5e;
+uint8_t DASH = 0x40;
+uint8_t BLANK = 0x00;
+uint8_t LOWER_O = 0x5c;
+uint8_t LOWER_L = 0x06;
+uint8_t LOWER_D = 0x5e;
 
 void setup() {
   Serial.begin(9600);
@@ -57,6 +62,7 @@ void setup() {
   pinMode(LED_PIN_2, OUTPUT);
   
   timer1 = timer2 = 0;
+  timer1Reset = timer2Reset = false;
   basetime = millis();
 }
 
@@ -65,27 +71,40 @@ void loop() {
 
   currtime = millis();
   if (currtime - basetime >= 1000) {
+    // set display every second
     basetime = currtime;
-    setClockDisplay(clock1,timer1);
-    setClockDisplay(clock2,timer2);
-    Serial.println(timer1);
-    Serial.println(timer2);
+    if (timer1Reset) {
+      setClockDisplay(clock1,0);
+      timer1Age++;    
+    } else {
+      if (timer1Age > 60) {
+        timmer1 = 1;
+      } 
+      timer1Age = 0;
+      setClockDisplay(clock1,timer1);      
+    }
+    if (timer2Reset) {
+      setClockDisplay(clock2,0);
+      timer2Age++;    
+    } else {
+      if (timer2Age > 60) {
+        timmer2 = 1;
+      } 
+      timer2Age = 0;
+      setClockDisplay(clock2,timer2);      
+    }
     timer1++;
     timer2++;
   }
 
   digitalWrite(LED_PIN_1, HIGH);
   delay(50);
-  if (digitalRead(TIME_PIN_1) == HIGH) {
-    timer1 = 0;
-  }
+  timer1Reset = (digitalRead(TIME_PIN_1) == HIGH);
   digitalWrite(LED_PIN_1, LOW);
   
   digitalWrite(LED_PIN_2, HIGH);
   delay(50);
-  if (digitalRead(TIME_PIN_2) == HIGH) {
-    timer2 = 0;
-  }
+  timer2Reset = (digitalRead(TIME_PIN_2) == HIGH);
   digitalWrite(LED_PIN_2, LOW);
   
   // Pause for a second for time to elapse.  This value is in milliseconds
@@ -108,19 +127,19 @@ void setClockDisplay(Adafruit_7segment localClock, long timer) {
   long second = timer;
   boolean blink = (second % 2) == 0;
 
-  if (day > 0) {
+  if (hour >= 12) {
     oldClockDisplay(localClock);
-  } else if ( hour > 0) {
-    setClockDisplay(localClock, hour, minute, blink);
-  } else if ( minute > 0 || second > 0) {
-    setClockDisplay(localClock, minute, second, blink);
+  } else if ( minute >= 1) {
+    setClockDisplay2Numbers(localClock, hour, minute, blink);
+  } else if ( second > 0) {
+    setClockDisplay1Number(localClock, second, blink);
   } else {
     dashClockDisplay(localClock);
   }
 
 }
 
-void setClockDisplay(Adafruit_7segment localClock, int numA, int numB, boolean blink) {
+void setClockDisplay2Numbers(Adafruit_7segment localClock, int numA, int numB, boolean blink) {
   int num10s = numA / 10;
   int num1s = numA - (num10s * 10);
   localClock.writeDigitNum(0, num10s);
@@ -135,18 +154,32 @@ void setClockDisplay(Adafruit_7segment localClock, int numA, int numB, boolean b
   localClock.writeDisplay();
 }
 
+void setClockDisplay1Number(Adafruit_7segment localClock, int numB, boolean blink) {
+  localClock.writeDigitRaw(0, BLANK);
+  localClock.writeDigitRaw(1, BLANK);
+
+  int num10s = numB / 10;
+  int num1s = numB - (num10s * 10);
+  localClock.writeDigitNum(3, num10s);
+  localClock.writeDigitNum(4, num1s);
+  localClock.drawColon(blink);
+  
+  localClock.writeDisplay();
+}
+
 
 void dashClockDisplay(Adafruit_7segment localClock) {
-  localClock.writeDigitRaw(0, dash);
-  localClock.writeDigitRaw(1, dash);
-  localClock.writeDigitRaw(3, dash);
-  localClock.writeDigitRaw(4, dash);  
+  localClock.writeDigitRaw(0, DASH);
+  localClock.writeDigitRaw(1, DASH);
+  localClock.writeDigitRaw(3, DASH);
+  localClock.writeDigitRaw(4, DASH);  
   localClock.writeDisplay();
 }
 
 void oldClockDisplay(Adafruit_7segment localClock) {
-  localClock.writeDigitRaw(1, lower_o);
-  localClock.writeDigitRaw(3, lower_l);
-  localClock.writeDigitRaw(4, lower_d);  
+  localClock.writeDigitRaw(0, BLANK);
+  localClock.writeDigitRaw(1, LOWER_O);
+  localClock.writeDigitRaw(3, LOWER_L);
+  localClock.writeDigitRaw(4, LOWER_D);  
   localClock.writeDisplay();
 }
