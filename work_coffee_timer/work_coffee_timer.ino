@@ -131,7 +131,7 @@ void setClockDisplay(Adafruit_7segment localClock, long timer) {
 
   if (hour >= 12) {
     oldClockDisplay(localClock);
-  } else if ( minute >= 1) {
+  } else if ( hour > 0 || minute >= 1) {
     setClockDisplay2Numbers(localClock, hour, minute, blink);
   } else if ( second > 0) {
     setClockDisplay1Number(localClock, second, blink);
